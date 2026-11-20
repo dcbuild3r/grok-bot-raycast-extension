@@ -77,7 +77,7 @@ bun run dev
 
 - If an executable or artwork is missing, run `bun run dev` again.
 - If the list is empty, open Grok Bot, sign in, wait for its sidebar to load, and refresh the Raycast list.
-- If Grok Bot already has a draft or attachment, send or clear it in Grok Bot before sending from the extension.
+- If the message is already drafted in Grok Bot, press **⌘O** to open the chat and review the draft before sending. If Grok Bot has a different draft or an attachment, send or clear it there first.
 - If the recipient cannot be verified, close duplicate chat windows and open the intended chat in Grok Bot to refresh its selection cache.
 
 If you use a custom Electron user-data directory, set **Grok Bot Data Folder** in the extension preferences. The default is `~/Library/Application Support/Grok Bot`.

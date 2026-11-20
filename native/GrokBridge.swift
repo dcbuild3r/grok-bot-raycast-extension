@@ -179,7 +179,14 @@ func send(_ request: Request) throws {
   guard sameWindow(root, window), let prompt = composer(window) else {
     throw BridgeError("Grok Bot’s message composer is unavailable.")
   }
-  guard string(prompt, kAXValueAttribute).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+  guard let existing = attribute(prompt, kAXValueAttribute) as? String else {
+    throw BridgeError("Grok Bot’s draft could not be read. Open the chat in Grok Bot to continue.")
+  }
+  if existing == request.message {
+    throw BridgeError(
+      "This message is already drafted in Grok Bot. Press ⌘O to review and send it there.")
+  }
+  guard existing.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
     sendButton(window) == nil
   else {
     throw BridgeError(
