@@ -15,9 +15,8 @@ export async function sendMessage(
     throw new Error(
       "The Grok Bot account changed. Refresh the bot list before sending.",
     );
-  if (
-    !current.bots.some((item) => item.id === bot.id && item.name === bot.name)
-  ) {
+  const sameName = current.bots.filter((item) => item.name === bot.name);
+  if (!sameName.some((item) => item.id === bot.id)) {
     throw new Error(
       "This bot changed or left the sidebar. Refresh the bot list before sending.",
     );
@@ -87,6 +86,7 @@ export async function sendMessage(
           ),
         ),
         lockPath: join(environment.supportPath, "send.lock"),
+        allowBackgroundReuse: sameName.length === 1,
       }),
     );
   });

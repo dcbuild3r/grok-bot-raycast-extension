@@ -11,6 +11,7 @@ struct Request: Decodable {
   let accountPath: String
   let selectionPath: String
   let lockPath: String
+  let allowBackgroundReuse: Bool?
 }
 
 struct BridgeError: LocalizedError {
@@ -65,11 +66,14 @@ func composer(_ root: AXUIElement) -> AXUIElement? {
   }
 }
 
+// An app in the background can report no focused window, so its main window is the fallback.
 func focusedWindow(_ root: AXUIElement) -> AXUIElement? {
-  guard let value = attribute(root, kAXFocusedWindowAttribute),
-    CFGetTypeID(value) == AXUIElementGetTypeID()
-  else { return nil }
-  return unsafeBitCast(value, to: AXUIElement.self)
+  for name in [kAXFocusedWindowAttribute, kAXMainWindowAttribute] {
+    if let value = attribute(root, name), CFGetTypeID(value) == AXUIElementGetTypeID() {
+      return unsafeBitCast(value, to: AXUIElement.self)
+    }
+  }
+  return nil
 }
 
 func sameWindow(_ root: AXUIElement, _ window: AXUIElement) -> Bool {
@@ -128,45 +132,65 @@ func send(_ request: Request) throws {
     throw BridgeError("Another message is being sent. Wait for it to finish.")
   }
 
-  guard
-    let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.anysphere.sand")
-  else {
+  let bundleID = "com.anysphere.sand"
+  guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
     throw BridgeError("Install and sign in to the Grok Bot macOS app first.")
   }
-  var components = URLComponents(string: "grokbot://app/v1/agent")!
-  components.queryItems = [URLQueryItem(name: "id", value: request.id)]
-  let configuration = NSWorkspace.OpenConfiguration()
-  configuration.activates = true
-  var opened = false
-  var openError: Error?
-  NSWorkspace.shared.open(
-    [components.url!], withApplicationAt: appURL, configuration: configuration
-  ) { _, error in
-    openError = error
-    opened = true
+  // Electron publishes window content to Accessibility in the background only on request.
+  let publishContent = { (root: AXUIElement) in
+    AXUIElementSetMessagingTimeout(root, 1)
+    AXUIElementSetAttributeValue(root, "AXManualAccessibility" as CFString, kCFBooleanTrue)
   }
-  guard waitFor(10, condition: { opened }), openError == nil else {
-    throw BridgeError("Grok Bot could not open the selected chat.")
+  let running = { NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first }
+  let readyWindow = { (root: AXUIElement) -> AXUIElement? in
+    guard let window = focusedWindow(root), selected(request),
+      heading(window, name: request.name), composer(window) != nil
+    else { return nil }
+    return window
   }
-  guard
-    let app = NSRunningApplication.runningApplications(withBundleIdentifier: "com.anysphere.sand")
-      .first
-  else {
+  var targetWindow: AXUIElement?
+  if request.allowBackgroundReuse == true, let app = running(), selected(request) {
+    let root = AXUIElementCreateApplication(app.processIdentifier)
+    publishContent(root)
+    // The first request after Grok Bot starts takes a few seconds to publish the content.
+    _ = waitFor(
+      4,
+      condition: {
+        targetWindow = readyWindow(root)
+        return targetWindow != nil
+      })
+  }
+  // The chat link is needed only when Grok Bot does not already show this bot.
+  if targetWindow == nil {
+    var components = URLComponents(string: "grokbot://app/v1/agent")!
+    components.queryItems = [URLQueryItem(name: "id", value: request.id)]
+    let configuration = NSWorkspace.OpenConfiguration()
+    configuration.activates = false
+    var opened = false
+    var openError: Error?
+    NSWorkspace.shared.open(
+      [components.url!], withApplicationAt: appURL, configuration: configuration
+    ) { _, error in
+      openError = error
+      opened = true
+    }
+    guard waitFor(10, condition: { opened }), openError == nil else {
+      throw BridgeError("Grok Bot could not open the selected chat.")
+    }
+  }
+  guard let app = running() else {
     throw BridgeError("Grok Bot is unavailable.")
   }
   let root = AXUIElementCreateApplication(app.processIdentifier)
-  AXUIElementSetMessagingTimeout(root, 1)
-  var targetWindow: AXUIElement?
+  publishContent(root)
   guard
-    waitFor(
-      12,
-      condition: {
-        guard let window = focusedWindow(root), selected(request),
-          heading(window, name: request.name), composer(window) != nil
-        else { return false }
-        targetWindow = window
-        return true
-      }), let window = targetWindow
+    targetWindow != nil
+      || waitFor(
+        12,
+        condition: {
+          targetWindow = readyWindow(root)
+          return targetWindow != nil
+        }), let window = targetWindow
   else {
     throw BridgeError(
       "The selected chat did not become ready. Check Grok Bot and refresh the bot list.")
@@ -196,7 +220,9 @@ func send(_ request: Request) throws {
       "Grok Bot could not accept text through Accessibility. Check Raycast’s Accessibility permission."
     )
   }
-  guard waitFor(3, condition: { string(prompt, kAXValueAttribute) == request.message }),
+  // Grok Bot can replace the composer element while it publishes content, so each check finds it again.
+  let draft = { composer(window).map { string($0, kAXValueAttribute) } }
+  guard waitFor(3, condition: { draft() == request.message }),
     selected(request), sameWindow(root, window), heading(window, name: request.name)
   else {
     throw BridgeError(
@@ -207,7 +233,7 @@ func send(_ request: Request) throws {
     throw BridgeError(
       "Grok Bot’s Send message button is unavailable. The message remains in the composer.")
   }
-  guard string(prompt, kAXValueAttribute) == request.message, selected(request),
+  guard draft() == request.message, selected(request),
     sameWindow(root, window), heading(window, name: request.name)
   else {
     throw BridgeError("The active chat or draft changed. Review Grok Bot before trying again.")
