@@ -9,7 +9,13 @@
 
 type ExtensionPreferences = {
   /** Grok Bot Data Folder - Optional custom Electron user-data folder containing sand-client-persistence. Defaults to ~/Library/Application Support/Grok Bot. */
-  "userDataPath"?: string
+  "userDataPath"?: string,
+  /** Chat Window Position - Where the chat window opens on the screen. */
+  "chatWindowPosition": "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right",
+  /** Chat Window Size - The size of the chat window when it opens. */
+  "chatWindowSize": "small" | "medium" | "large",
+  /** Chat Text Size - The size of text in the chat window. The rest of the chat layout scales with it. */
+  "chatTextSize": "12" | "13" | "15" | "17"
 }
 
 /** Preferences accessible in all the extension's commands */

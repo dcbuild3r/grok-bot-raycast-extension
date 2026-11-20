@@ -56,6 +56,84 @@
       "description": "Optional custom Electron user-data folder containing sand-client-persistence. Defaults to ~/Library/Application Support/Grok Bot.",
       "type": "textfield",
       "required": false
+    },
+    {
+      "name": "chatWindowPosition",
+      "title": "Chat Window Position",
+      "description": "Where the chat window opens on the screen.",
+      "type": "dropdown",
+      "required": false,
+      "default": "center",
+      "data": [
+        {
+          "title": "Center",
+          "value": "center"
+        },
+        {
+          "title": "Top Left",
+          "value": "top-left"
+        },
+        {
+          "title": "Top Right",
+          "value": "top-right"
+        },
+        {
+          "title": "Bottom Left",
+          "value": "bottom-left"
+        },
+        {
+          "title": "Bottom Right",
+          "value": "bottom-right"
+        }
+      ]
+    },
+    {
+      "name": "chatWindowSize",
+      "title": "Chat Window Size",
+      "description": "The size of the chat window when it opens.",
+      "type": "dropdown",
+      "required": false,
+      "default": "large",
+      "data": [
+        {
+          "title": "Small",
+          "value": "small"
+        },
+        {
+          "title": "Medium",
+          "value": "medium"
+        },
+        {
+          "title": "Large",
+          "value": "large"
+        }
+      ]
+    },
+    {
+      "name": "chatTextSize",
+      "title": "Chat Text Size",
+      "description": "The size of text in the chat window. The rest of the chat layout scales with it.",
+      "type": "dropdown",
+      "required": false,
+      "default": "15",
+      "data": [
+        {
+          "title": "Small",
+          "value": "12"
+        },
+        {
+          "title": "Medium",
+          "value": "13"
+        },
+        {
+          "title": "Large",
+          "value": "15"
+        },
+        {
+          "title": "Extra Large",
+          "value": "17"
+        }
+      ]
     }
   ],
   "scripts": {

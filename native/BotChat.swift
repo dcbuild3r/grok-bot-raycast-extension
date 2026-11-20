@@ -9,6 +9,9 @@ struct ChatRequest: Decodable {
   let draft: String
   let messages: [ChatEntry]
   let previewPath: String?
+  let windowPosition: String?
+  let windowSize: String?
+  let textSize: Double?
 }
 
 struct ChatEntry: Codable {
@@ -70,10 +73,26 @@ final class ChatController: NSObject, NSApplicationDelegate, NSWindowDelegate, W
     config.preferences.javaScriptCanOpenWindowsAutomatically = false
     config.userContentController.add(self, name: "chat")
     let visible = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1100, height: 850)
-    let size = NSSize(width: min(900, visible.width - 40), height: min(740, visible.height - 40))
-    let frame = NSRect(
-      x: visible.midX - size.width / 2, y: visible.midY - size.height / 2, width: size.width,
-      height: size.height)
+    let preferred: NSSize
+    switch request.windowSize {
+    case "small": preferred = NSSize(width: 480, height: 520)
+    case "medium": preferred = NSSize(width: 680, height: 620)
+    default: preferred = NSSize(width: 900, height: 740)
+    }
+    let size = NSSize(
+      width: min(preferred.width, visible.width - 40),
+      height: min(preferred.height, visible.height - 40))
+    // Corner positions sit flush against the usable screen area, inside the menu bar and Dock.
+    let position = request.windowPosition ?? "center"
+    let x =
+      position.hasSuffix("-left")
+      ? visible.minX
+      : position.hasSuffix("-right") ? visible.maxX - size.width : visible.midX - size.width / 2
+    let y =
+      position.hasPrefix("top-")
+      ? visible.maxY - size.height
+      : position.hasPrefix("bottom-") ? visible.minY : visible.midY - size.height / 2
+    let frame = NSRect(x: x, y: y, width: size.width, height: size.height)
     window = NSWindow(
       contentRect: frame, styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
       backing: .buffered, defer: false)
@@ -90,6 +109,8 @@ final class ChatController: NSObject, NSApplicationDelegate, NSWindowDelegate, W
     }
     webView = WKWebView(frame: NSRect(origin: .zero, size: size), configuration: config)
     webView.navigationDelegate = self
+    // The stylesheet is designed at 15px, so page zoom scales the text and its layout together.
+    webView.pageZoom = min(1.5, max(0.6, CGFloat(request.textSize ?? 15) / 15))
     window.contentView = webView
     webView.loadFileURL(htmlURL, allowingReadAccessTo: URL(fileURLWithPath: request.assetsPath))
     if request.previewPath == nil && !CommandLine.arguments.contains("--self-test") {
