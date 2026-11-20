@@ -143,6 +143,16 @@ try {
   const common = await import(pathToFileURL(path.join(temp, commonName)).href);
   // This runs only the installed, trusted Grok Bot renderer to export its own artwork locally.
   const render = new Function("common", code)(common);
+  // Minified export names vary between Grok Bot builds.
+  const bodyOf = Object.values(common).find(
+    (value) =>
+      typeof value === "function" &&
+      ["starFlower", "heartChubby"].every((name) =>
+        String(value).includes(name),
+      ),
+  );
+  if (!bodyOf)
+    throw new Error("This Grok Bot build uses an unsupported avatar format.");
   const shapes = [
     "blob",
     "pebble",
@@ -174,21 +184,11 @@ try {
   const folder = path.join(root, "assets/bot-avatars");
   fs.mkdirSync(folder, { recursive: true });
   for (const shape of shapes) {
-    const svg = render({ body: common.E(shape), ink: "#ffffff", size: 64 });
+    const svg = render({ body: bodyOf(shape), ink: "#ffffff", size: 64 });
     if (!svg.startsWith("<svg") || /NaN|undefined/.test(svg))
       throw new Error(`Invalid Grok Bot avatar ${shape}`);
     writeChanged(path.join(folder, `${shape}.svg`), svg);
   }
-  const palette = Object.fromEntries(
-    common.pt.map(({ id }) => [
-      id,
-      { light: common.V(id, "light"), dark: common.V(id, "dark") },
-    ]),
-  );
-  writeChanged(
-    path.join(folder, "palette.json"),
-    `${JSON.stringify(palette, null, 2)}\n`,
-  );
   const iconset = path.join(temp, "Grok.iconset");
   execFileSync(
     "/usr/bin/iconutil",
