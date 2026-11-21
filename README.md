@@ -45,6 +45,8 @@ Keep `bun run dev` running while developing. After the first successful import, 
 2. Search for a bot and press Return, or type its displayed number.
 3. Write your message and press **⌘Return** or click the send button.
 
+When the recipient’s chat is already open in Grok Bot, sending can run in the background. Opening a different chat or launching Grok Bot may bring the app forward.
+
 Recent messages refresh from Grok Bot's local cache every two seconds while the window is open. Drafts are saved in Raycast's local storage. **⌘O** opens the full Grok Bot chat. Escape closes the window. The back button returns to the bot list.
 
 Numbering follows the pinned-first, most-recent order. A digit that can begin a longer number waits briefly for the next digit. The order stays fixed while you enter a number.
