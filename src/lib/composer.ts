@@ -3,6 +3,7 @@ import {
   LaunchType,
   closeMainWindow,
   environment,
+  getPreferenceValues,
   launchCommand,
   open,
 } from "@raycast/api";
@@ -33,6 +34,7 @@ export async function openComposer(
   const saved = await LocalStorage.getItem<string>(key);
   let draft = initialMessage || (typeof saved === "string" ? saved : "");
   let messages = await loadHistory(folder, accountSlot, bot.id).catch(() => []);
+  const preferences = getPreferenceValues<Preferences>();
   await closeMainWindow();
   const result = await new Promise<{ type: string; back?: boolean }>(
     (resolve, reject) => {
@@ -232,6 +234,9 @@ export async function openComposer(
         assetsPath: environment.assetsPath,
         draft,
         messages,
+        windowPosition: preferences.chatWindowPosition,
+        windowSize: preferences.chatWindowSize,
+        textSize: Number(preferences.chatTextSize) || undefined,
       });
     },
   );

@@ -43,6 +43,7 @@ header {
   color: #999;
   width: 34px;
   height: 34px;
+  flex-shrink: 0;
   font-size: 27px;
   line-height: 24px;
   border-radius: 50%;
@@ -54,6 +55,7 @@ header {
 .bot-pill {
   display: flex;
   align-items: center;
+  min-width: 0;
   gap: 9px;
   padding: 8px 15px 8px 9px;
   border-radius: 25px;
@@ -64,7 +66,13 @@ header {
 .bot-pill img {
   width: 29px;
   height: 29px;
+  flex-shrink: 0;
   object-fit: contain;
+}
+#name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 main {
   flex: 1;
@@ -146,6 +154,8 @@ main {
   margin-bottom: 5px;
 }
 .empty strong {
+  max-width: 100%;
+  overflow-wrap: anywhere;
   font-size: 20px;
   color: #eee;
   font-weight: 500;

@@ -49,6 +49,14 @@ Recent messages refresh from Grok Bot's local cache every two seconds while the 
 
 Numbering follows the pinned-first, most-recent order. A digit that can begin a longer number waits briefly for the next digit. The order stays fixed while you enter a number.
 
+### Adjust the chat window
+
+Set these in **Raycast Settings → Extensions → Grok Bot**.
+
+- **Chat Window Position**: center, or flush against any corner of the usable screen area.
+- **Chat Window Size**: small, medium, or large.
+- **Chat Text Size**: small to extra large. The chat layout scales with the text.
+
 ## Use the bot wheel
 
 ![Bot wheel](docs/screenshots/wheel.png)
